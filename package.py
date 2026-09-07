@@ -7,10 +7,10 @@ root = Path(__file__).resolve().parent
 html = (root / 'index.html').read_text(encoding='utf-8')
 css = (root / 'style.css').read_text(encoding='utf-8')
 parts = []
-for name in ['engine.js', 'data.js', 'app.js']:
+for name in ['engine.js', 'data.js', 'storage.js', 'sales-ui.js', 'app.js']:
     js = (root / name).read_text(encoding='utf-8')
     js = re.sub(r'^import .*;\n', '', js, flags=re.M)
-    js = re.sub(r'\bexport (?=(?:function|const)\b)', '', js)
+    js = re.sub(r'\bexport (?=(?:function|const|class)\b)', '', js)
     parts.append(js)
 html = html.replace('<link rel="stylesheet" href="./style.css">', '<style>' + css + '</style>')
 js = '\n'.join(parts).replace('</script', '<\\/script')

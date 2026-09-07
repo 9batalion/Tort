@@ -1,6 +1,6 @@
 # Pracownia Tortów — wszystko w jednym folderze
 
-Polska aplikacja do receptur, przeliczania form, planowania składników i wyceny tortów. Gotowa do GitHub Pages. Własny silnik JavaScript, bez konta, backendu, płatnego API, bibliotek pobieranych z CDN i instalowania zależności.
+Polska aplikacja do receptur, przeliczania form, planowania składników i wyceny tortów. Gotowa do GitHub Pages. Wersja 1.1 dodaje moduł sprzedaży i zamówień ze zdjęciami. Własny silnik JavaScript, bez konta, backendu, płatnego API, bibliotek pobieranych z CDN i instalowania zależności.
 
 ## Szybki podgląd
 
@@ -11,7 +11,7 @@ Nie otwieraj bezpośrednio `index.html` przez `file://`: ta wersja używa moduł
 ## Publikacja na GitHub Pages — najprościej
 
 1. Utwórz repozytorium na GitHub, np. `pracownia-tortow`.
-2. Wgraj **wszystkie pliki z folderu `Pracownia-Tortow`** do głównego katalogu repozytorium (bez folderu nadrzędnego). `index.html`, `app.js`, `engine.js`, `data.js` i `style.css` mają leżeć obok siebie. Dołącz również `.nojekyll`.
+2. Wgraj **wszystkie pliki z folderu `Pracownia-Tortow`** do głównego katalogu repozytorium (bez folderu nadrzędnego). `index.html`, `app.js`, `engine.js`, `data.js`, `storage.js`, `sales-ui.js` i `style.css` mają leżeć obok siebie. Dołącz również `.nojekyll`.
 3. Otwórz **Settings → Pages**.
 4. W **Build and deployment → Source** wybierz **Deploy from a branch**.
 5. Wybierz gałąź **main** i folder **/(root)**. Zapisz.
@@ -26,6 +26,37 @@ Instrukcja na podstawie [dokumentacji GitHub Pages](https://docs.github.com/en/p
 Aplikacja, silnik, dane, style, podgląd, instrukcja i testy leżą obok siebie. Nie trzeba tworzyć katalogów `dist`, `tests` ani `scripts`. Po wrzuceniu plików do repozytorium wybierz publikację z gałęzi `main` i folderu `/(root)`.
 
 Plik `pages-workflow.yml` zachowano jako opcjonalny szablon dla osób, które później zechcą przejść na GitHub Actions. W obecnym, płaskim układzie nie uruchamia się automatycznie i nie jest potrzebny do publikacji. Aktywacja tego wariantu wymagałaby umieszczenia go w ścieżce `.github/workflows/pages.yml` i zmiany źródła Pages na GitHub Actions; domyślna instrukcja powyżej pozwala zachować jeden folder.
+
+## Moduł sprzedaży — nowość
+
+W zakładce **Sprzedaż i zamówienia** można:
+
+- dodać, edytować, przeglądać i usuwać zamówienia z automatycznym numerem;
+- zapisać klienta, telefon, e-mail, datę i godzinę odbioru, dostawę i adres;
+- opisać okazję, smak, liczbę porcji, kolorystykę, dokładny napis, dekoracje, wymagania klienta i notatki wewnętrzne;
+- ustawić status: zapytanie, potwierdzone, w przygotowaniu, gotowe, wydane, anulowane;
+- dodać do 8 zdjęć poglądowych, podpisy, powiększać podgląd i usuwać pojedyncze zdjęcia;
+- wpisać ustaloną cenę, otrzymaną zaliczkę oraz pozostałe wpłaty; zobaczyć niedopłatę albo nadpłatę;
+- połączyć zamówienie z bieżącą kalkulacją lub archiwalną wyceną;
+- filtrować zamówienia po statusie, przedziale dat, kliencie, numerze, telefonie i opisie;
+- wydrukować kartę zamówienia ze zdjęciami, a dla powiązanej wyceny również kartę produkcji;
+- wyeksportować filtrowaną listę CSV i wykonać pełną kopię JSON ze zdjęciami.
+
+Przycisk **Utwórz zamówienie** w kalkulatorze przenosi nazwę, sugerowane porcje, bieżącą cenę sprzedaży i niezależną kopię wyceny. W edytorze przycisk **Podłącz i pobierz cenę oraz porcje** jawnie zastępuje cenę i porcje danymi z wybranej kalkulacji. Odłączenie wyceny zostawia cenę i pozostałe ustalenia. Zmiana cen składników i usunięcie wyceny z archiwum nie zmieniają powiązanej kopii.
+
+Zaliczka i pozostałe wpłaty to dwie rozłączne kwoty faktycznie otrzymane. Status **Wydane** nie oznacza automatycznej zapłaty. Anulowanie nie usuwa wpłat ani nie wykonuje zwrotu; ewentualne rozliczenie trzeba odnotować samodzielnie. Moduł jest ewidencją zamówień, a nie systemem faktur, płatności internetowych lub księgowości.
+
+Zdjęcia: JPEG, PNG, WebP; maks. 15 MB i 50 megapikseli pliku wejściowego. Aplikacja tworzy poglądowe kopie JPEG, maksymalnie 1400 pikseli na dłuższym boku, w razie potrzeby mniejsze. Dane EXIF nie są przenoszone. Przezroczystość ma białe tło, animacja nie jest zachowywana. Oryginały przechowuj osobno. Dla HEIC użyj kopii JPEG. Limit wynosi 8 zdjęć na zamówienie oraz 60 MiB tekstowej reprezentacji zdjęć w całej bazie.
+
+Karta zamówienia zawiera **notatki wewnętrzne i dane kontaktowe**, więc jest przeznaczona do pracy w pracowni. Zdjęcia dodane w formularzu zapisują się dopiero po użyciu przycisku **Zapisz zamówienie**.
+
+## Aktualizacja poprzedniej wersji
+
+1. W starej aplikacji pobierz kopię JSON.
+2. W tym samym repozytorium zastąp pliki nową wersją i dodaj nowe pliki `storage.js` oraz `sales-ui.js`. Wszystkie nadal leżą w jednym folderze.
+3. Przy pierwszym uruchomieniu pod tym samym adresem aplikacja automatycznie przeniesie dotychczasowe dane z małej pamięci przeglądarki do bazy IndexedDB. Nie usuwa poprzedniego zapisu.
+4. Jeśli uruchamiasz pod innym adresem lub na innym urządzeniu, wczytaj kopię JSON ręcznie.
+5. Nowa kopia JSON obejmuje zamówienia i zdjęcia. Import starej kopii, która nie ma zamówień, zastąpi obecną listę zamówień pustą listą — przed importem pobierz aktualną kopię.
 
 ## Funkcje
 
@@ -111,14 +142,14 @@ Pełna precyzja jest zachowana do obliczenia wyniku. Tabele zaokrąglają liczby
 
 ## Dane i prywatność
 
-- Dane przechowuje `localStorage` pod kluczem `pracownia-tortow:v1`.
+- Dane i pomniejszone zdjęcia przechowuje lokalna baza IndexedDB `pracownia-tortow`. Stary klucz `localStorage`, `pracownia-tortow:v1`, jest tylko źródłem migracji; aktualna aplikacja nie zapisuje do niego nowych danych.
 - Brak synchronizacji między urządzeniami, kont użytkowników i bazy serwerowej.
 - Kod i dane demonstracyjne są publikowane w repozytorium. Wpisy w interfejsie pozostają w przeglądarce; aplikacja ich nie wysyła.
 - Inne aplikacje na tym samym originie, np. inne projekty pod tym samym `uzytkownik.github.io`, mogą mieć dostęp do tej samej pamięci przeglądarki. To nie jest magazyn szyfrowany.
 - Zmiana domeny, tryb prywatny i czyszczenie pamięci mogą odciąć dostęp do danych. Eksportuj JSON regularnie.
-- Gdy inna karta zmieni bazę, automatyczny zapis jest wstrzymywany do odświeżenia. Uszkodzony zapis nie jest automatycznie nadpisywany.
-- Wycena archiwalna przechowuje pełną kopię bazy z chwili zapisu. Przywracanie zastępuje bieżące składniki, receptury i kalkulator po potwierdzeniu; pozostawia archiwum.
-- Import sprawdza wersję, liczby, jednostki, identyfikatory i referencje; ma limit 20 MB. Limit bazy: 1000 składników, 300 receptur, 500 wycen, 20 pięter na zamówienie.
+- Zapisy są kolejkowane i transakcyjne. Numer rewizji chroni przed nadpisaniem danych przez nieaktualną kartę. Błąd zapisu jest widoczny w interfejsie; nie zamykaj strony przed pobraniem kopii, jeśli zapis się nie powiódł. Uszkodzony zapis nie jest automatycznie nadpisywany.
+- Wycena archiwalna przechowuje pełną kopię bazy z chwili zapisu. Przywracanie wyceny zastępuje bieżące składniki, receptury i kalkulator po potwierdzeniu; pozostawia archiwum oraz zamówienia sprzedażowe. Pełny import JSON zastępuje całą bazę, w tym zamówienia.
+- Import sprawdza wersję, liczby, jednostki, identyfikatory i referencje; ma limit 100 MB pliku. Limit bazy: 1000 składników, 300 receptur, 500 wycen, 1000 zamówień sprzedażowych, 20 pięter na kalkulację.
 - Druk oferty nie ujawnia cen zakupu i zysku. Druk cennika jest dokumentem roboczym i pokazuje koszty.
 
 ## Struktura i rozwój
@@ -130,6 +161,10 @@ Pełna precyzja jest zachowana do obliczenia wyniku. Tabele zaokrąglają liczby
 | `app.js` | Interfejs, edytory, lokalny zapis, import/eksport |
 | `engine.js` | Czyste funkcje geometrii, jednostek, kosztów i walidacji |
 | `data.js` | Dane demonstracyjne |
+| `sales-ui.js` | Moduł sprzedaży, formularz, zdjęcia i karta zamówienia |
+| `storage.js` | Kolejka i transakcyjny zapis lokalny w IndexedDB |
+| `sales.test.mjs` | Rozliczenia, walidacja i kopie zamówień |
+| `storage.test.mjs` | Sprawdzenie kolejki i konfliktów na atrapie bazy |
 | `engine.test.mjs` | Testy rachunkowe i walidacji |
 | `ui.test.mjs` | Testy generowania widoków na atrapach DOM |
 | `package.py` | Generowanie podglądu i ZIP z bieżącego kodu |
@@ -158,9 +193,9 @@ python3 package.py
 
 ## Weryfikacja tej wersji
 
-Wykonano 24 testy: 19 silnika i 5 testów generowania widoków, edytorów, archiwum, dokumentów i escapowania treści. Wszystkie przeszły. Zweryfikowano składnię JavaScript i odwołania do lokalnych zasobów.
+Wykonano 37 testów: 19 silnika kalkulacji, 6 modułu sprzedaży, 9 aplikacji oraz 3 transakcyjnego adaptera zapisu. Wszystkie przeszły. Zweryfikowano składnię JavaScript i odwołania do lokalnych zasobów.
 
-Testy widoków używają atrap granicy DOM. Nie wykonano pełnych testów w przeglądarce ani rzeczywistej publikacji na koncie GitHub użytkownika. Przed pracą produkcyjną sprawdź zapis, odczyt JSON i druk na swoim urządzeniu.
+Testy widoków używają atrap granicy DOM, a testy zapisu atrap granicy IndexedDB. Nie weryfikują zachowania rzeczywistej przeglądarki, aparatu ani jakości kompresji zdjęć. Nie wykonano pełnych testów w przeglądarce ani rzeczywistej publikacji na koncie GitHub użytkownika. Przed pracą produkcyjną sprawdź dodanie zdjęcia, zapis i ponowne otwarcie zamówienia, odczyt JSON oraz druk na swoim urządzeniu.
 
 ## Badanie przed implementacją
 
