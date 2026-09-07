@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {initialState} from './data.js';
+import {initialState,migrateState} from './data.js';
 import {geometry,scale,convert,calculate,validateState} from './engine.js';
 const near=(actual,expected)=>assert.ok(Math.abs(actual-expected)<1e-8,`${actual} != ${expected}`);
 const base={shape:'round',diameter:20,width:20,length:30,height:10,layers:2};
@@ -25,3 +25,28 @@ test('Snapshots retain old ingredient prices',()=>{const s=fixture();const snaps
 test('Reject zero dimensions, fractional layers, unknown ingredients and invalid margins',()=>{for(const mutate of [s=>s.order.tiers[0].diameter=0,s=>s.order.tiers[0].layers=1.5,s=>s.order.margin=100,s=>s.recipes[0].rows[0].ingredientId='missing',s=>s.ingredients[0].pack=0,s=>s.order.count=1.2,s=>s.order.hours=NaN]){const s=fixture();mutate(s);assert.throws(()=>calc(s));}});
 test('Backup validation rejects duplicate ids and incompatible units',()=>{const s=fixture();s.ingredients.push({...s.ingredients[0]});assert.throws(()=>validateState(s));const t=fixture();t.recipes[0].rows[0].unit='ml';assert.throws(()=>validateState(t));});
 test('Demonstration data are valid and calculable',()=>{const s=initialState();validateState(s);const r=calc(s);assert.ok(r.sale>r.total);assert.ok(r.shoppingCost>0);assert.ok(r.portions>0);});
+
+test('Piece ingredients round upward and fixed pieces ignore reserve',()=>{
+  const s=fixture();
+  s.ingredients[0]={...s.ingredients[0],unit:'szt',pack:10,stock:0};
+  s.recipes[0].rows=[{ingredientId:'one',qty:3,unit:'szt',mode:'volume',group:'Ciasto'}];
+  s.order.tiers[0].diameter=21;s.order.reserve=50;
+  const scaled=calc(s);
+  assert.equal(scaled.rows[0].net,4);assert.equal(scaled.rows[0].gross,4);assert.equal(scaled.shopping[0].gross,4);
+  s.recipes[0].rows[0].qty=1;s.recipes[0].rows[0].mode='fixed';
+  const fixed=calc(s);assert.equal(fixed.rows[0].net,1);
+});
+test('Piece packages, stock and base recipes require whole numbers',()=>{
+  for(const mutate of [s=>s.ingredients[0].pack=10.5,s=>s.ingredients[0].stock=.5,s=>s.recipes[0].rows[0].qty=1.5]){
+    const s=fixture();s.ingredients[0]={...s.ingredients[0],unit:'szt',pack:10,stock:0};s.recipes[0].rows=[{ingredientId:'one',qty:2,unit:'szt',mode:'volume',group:'Ciasto'}];mutate(s);assert.throws(()=>calc(s),/całkowit/);
+  }
+});
+test('Fresh demonstration recipes use eggs in pieces',()=>{
+  const s=initialState(),egg=s.ingredients.find(i=>i.id==='egg');assert.equal(egg.unit,'szt');assert.equal(egg.pack,10);
+  for(const r of s.recipes){const row=r.rows.find(x=>x.ingredientId==='egg');assert.equal(row.unit,'szt');assert.equal(row.qty,6);}
+});
+test('Untouched legacy demonstration eggs migrate once, custom eggs stay unchanged',()=>{
+  const s=initialState(),egg=s.ingredients.find(i=>i.id==='egg');egg.name='Jaja — masa bez skorupki';egg.unit='g';egg.pack=500;for(const r of s.recipes){const row=r.rows.find(x=>x.ingredientId==='egg');row.qty=300;row.unit='g';}
+  const first=migrateState(s);assert.equal(first.changed,true);assert.equal(egg.unit,'szt');assert.equal(egg.pack,10);assert.equal(migrateState(s).changed,false);
+  const custom=initialState();custom.ingredients.find(i=>i.id==='egg').price=20;assert.equal(migrateState(custom).changed,false);
+});

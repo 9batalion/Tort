@@ -106,7 +106,9 @@ Przykłady kontrolne:
 
 ### Ilości i koszt
 
-`ilość do receptury = wzór × współczynnik × liczba tortów × (1 + zapas technologiczny / 100)`
+`ilość wagowa lub objętościowa = wzór × współczynnik × liczba tortów × (1 + zapas technologiczny / 100)`
+
+`liczba sztuk = ceil(wzór × współczynnik × liczba tortów)`
 
 `zużycie zakupowe brutto = ilość do receptury / (1 − strata składnika / 100)`
 
@@ -114,7 +116,7 @@ Przykłady kontrolne:
 
 Przykład: 100 g produktu jadalnego przy stracie 10% wymaga 111,11 g produktu zakupionego. Mnożenie przez 1,10 dałoby nieprawidłową ilość.
 
-Zapas technologiczny obejmuje wszystkie pozycje receptury, w tym stałe dekoracje. Gdy potrzebujesz dokładnie jednego toppera bez zapasu, wpisz jego koszt w dekoracjach dodatkowych zamiast w recepturze. Nie naliczaj tej samej dekoracji w obu miejscach.
+Zapas technologiczny zwiększa tylko składniki wagowe i objętościowe. Składniki w sztukach zaokrąglamy w górę do pełnej sztuki, bez dodatkowego procentu. Pozycje ze skalowaniem „Stała ilość na piętro”, np. topper, zachowują ilość bazową i również nie otrzymują zapasu. Nie naliczaj tej samej dekoracji równocześnie w recepturze i w kosztach dodatkowych.
 
 Lista zakupów odejmuje magazyn, a brak zaokrągla w górę do pełnych opakowań. Koszt tortu obejmuje tylko zużytą część, także z posiadanych składników. Zapis wyceny nie zmienia stanu magazynu.
 
@@ -134,7 +136,7 @@ Kwoty wpisuj konsekwentnie netto albo brutto. Silnik nie rozlicza VAT, podatku d
 
 W ramach masy przeliczamy g ↔ kg, a objętości ml ↔ l. Nie zakładamy, że 1 ml = 1 g. Używaj zgodnych jednostek albo ustal masę netto opakowania i utwórz składnik wagowy.
 
-Jaja demonstracyjne prowadzone są według masy bez skorupki. Ich cena za 500 g jest przykładowa, nie wynika z automatycznego założenia o masie pojedynczego jaja. Przy sztukach aplikacja zachowuje ułamki: praktyczne zaokrąglenie należy do użytkownika.
+Jaja demonstracyjne są prowadzone w sztukach: opakowanie 10 szt. i 6 szt. w recepturze bazowej. Cena jest przykładowa. Tak samo konfiguruj inne produkty liczone pojedynczo. Dla jednostki „szt.” wielkość opakowania, magazyn i ilość bazowa muszą być liczbami całkowitymi. Po zmianie rozmiaru formy wynik jest zaokrąglany w górę osobno dla każdego piętra, np. 8,64 jaja daje 9 szt. Procentowy zapas technologiczny nie jest doliczany do sztuk.
 
 Porcje to suma `floor(objętość piętra / objętość porcji)`, z minimum jednej porcji na piętro, pomnożona przez liczbę tortów. Domyślne 180 cm³ jest edytowalnym założeniem, nie normą. Nie wyznaczamy masy całego tortu z mieszaniny gramów, ml i sztuk.
 
@@ -193,7 +195,7 @@ python3 package.py
 
 ## Weryfikacja tej wersji
 
-Wykonano 37 testów: 19 silnika kalkulacji, 6 modułu sprzedaży, 9 aplikacji oraz 3 transakcyjnego adaptera zapisu. Wszystkie przeszły. Zweryfikowano składnię JavaScript i odwołania do lokalnych zasobów.
+Wykonano 41 testów: 23 silnika kalkulacji i jednostek, 6 modułu sprzedaży, 9 aplikacji oraz 3 transakcyjnego adaptera zapisu. Wszystkie przeszły. Zweryfikowano składnię JavaScript i odwołania do lokalnych zasobów.
 
 Testy widoków używają atrap granicy DOM, a testy zapisu atrap granicy IndexedDB. Nie weryfikują zachowania rzeczywistej przeglądarki, aparatu ani jakości kompresji zdjęć. Nie wykonano pełnych testów w przeglądarce ani rzeczywistej publikacji na koncie GitHub użytkownika. Przed pracą produkcyjną sprawdź dodanie zdjęcia, zapis i ponowne otwarcie zamówienia, odczyt JSON oraz druk na swoim urządzeniu.
 
