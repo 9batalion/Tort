@@ -11,7 +11,7 @@ Nie otwieraj bezpośrednio `index.html` przez `file://`: ta wersja używa moduł
 ## Publikacja na GitHub Pages — najprościej
 
 1. Utwórz repozytorium na GitHub, np. `pracownia-tortow`.
-2. Wgraj **wszystkie pliki z folderu `Pracownia-Tortow`** do głównego katalogu repozytorium (bez folderu nadrzędnego). `index.html`, `app.js`, `engine.js`, `data.js`, `storage.js`, `sales-ui.js` i `style.css` mają leżeć obok siebie. Dołącz również `.nojekyll`.
+2. Wgraj **wszystkie pliki z folderu `Pracownia-Tortow`** do głównego katalogu repozytorium (bez folderu nadrzędnego). `index.html`, `app.js`, `engine.js`, `data.js`, `storage.js`, `sales-ui.js`, `cooking.js`, `demo-steps.js` i `style.css` mają leżeć obok siebie. Dołącz również `.nojekyll`.
 3. Otwórz **Settings → Pages**.
 4. W **Build and deployment → Source** wybierz **Deploy from a branch**.
 5. Wybierz gałąź **main** i folder **/(root)**. Zapisz.
@@ -27,7 +27,25 @@ Aplikacja, silnik, dane, style, podgląd, instrukcja i testy leżą obok siebie.
 
 Plik `pages-workflow.yml` zachowano jako opcjonalny szablon dla osób, które później zechcą przejść na GitHub Actions. W obecnym, płaskim układzie nie uruchamia się automatycznie i nie jest potrzebny do publikacji. Aktywacja tego wariantu wymagałaby umieszczenia go w ścieżce `.github/workflows/pages.yml` i zmiany źródła Pages na GitHub Actions; domyślna instrukcja powyżej pozwala zachować jeden folder.
 
-## Moduł sprzedaży — nowość
+## Zrób krok po kroku — przygotowanie po przeliczeniu
+
+Po ustawieniu rozmiaru w **Kalkulatorze tortu** kliknij **Zrób krok po kroku**. Dostaniesz kolejne etapy przygotowania i potrzebne na danym etapie składniki w już przeliczonych ilościach. Na przykład dla domyślnego tortu Ø24 cm krok biszkoptu pokazuje 9 jaj w sztukach.
+
+- Nawiguj przyciskami **Wstecz**, **Odhacz wykonany** i **Gotowe — dalej** lub wybierz etap z listy.
+- Odhaczenia i bieżący etap zapisują się lokalnie i w pełnej kopii JSON. Po ponownym otwarciu tego samego tortu można wrócić do pracy.
+- Zmieniony rozmiar, liczba tortów lub instrukcja wymagają nowej listy; aplikacja pyta o zastąpienie poprzedniego postępu. Przechowywany jest jeden bieżący postęp, nie wiele równoległych sesji.
+- Każde piętro ma swoje etapy. Ilości na jego karcie dotyczą całej liczby identycznych tortów z kalkulacji.
+- Tabela danej sekcji może wracać w kolejnych etapach, np. ubijanie jaj i dodanie mąki. Przypomina tę samą pulę składników; nie oznacza odmierzania ich drugi raz.
+- Pole **Cała receptura i wszystkie kroki** pozwala podejrzeć instrukcję bez wychodzenia z trybu przygotowania.
+- W szczegółach zamówienia z powiązaną wyceną jest ten sam przycisk. Korzysta z instrukcji zapisanej w powiązanej kopii receptury.
+
+W **Receptury → Edytuj → Przygotowanie krok po kroku** można dopisać instrukcje, nadać nazwy, ustawić kolejność, przypisać sekcje składników oraz podać czas w minutach i temperaturę w °C. Puste pola czasu i temperatury są dozwolone. Instrukcja może zawierać znaczniki `{forma}`, `{blaty}`, `{przelozenia}`, `{wysokosc}` i `{liczba_tortow}` — zostaną uzupełnione według przeliczonego tortu. **Dodaj krok z notatek** przenosi istniejącą instrukcję do nowego etapu.
+
+Czasy i temperatury pozostają wartościami z przepisu; nie są proporcjonalnie zwiększane wraz ze średnicą. Nowe dane demonstracyjne mają pełną przykładową procedurę: biszkopt, krem, składanie, chłodzenie i tynk. Nie są to receptury zweryfikowane wypiekiem. Podane nastawy to wartości orientacyjne do sprawdzenia dla własnego piekarnika i receptury. Zmienione receptury użytkownika nie otrzymują automatycznie dopisanych instrukcji. Stare wyceny bez kroków pokazują zachowane notatki i ilości składników, a nie instrukcje z później zmodyfikowanej bazy.
+
+Przy aktualizacji wgraj także nowe pliki `cooking.js` oraz `demo-steps.js`, obok wszystkich wcześniejszych plików. Dane demonstracyjne, których składniki i notatki nie zostały zmienione, automatycznie otrzymają przykładowe kroki.
+
+## Moduł sprzedaży
 
 W zakładce **Sprzedaż i zamówienia** można:
 
@@ -165,6 +183,9 @@ Pełna precyzja jest zachowana do obliczenia wyniku. Tabele zaokrąglają liczby
 | `data.js` | Dane demonstracyjne |
 | `sales-ui.js` | Moduł sprzedaży, formularz, zdjęcia i karta zamówienia |
 | `storage.js` | Kolejka i transakcyjny zapis lokalny w IndexedDB |
+| `cooking.js` | Tryb krok po kroku, przeliczone składniki i postęp |
+| `demo-steps.js` | Przykładowe instrukcje przygotowania |
+| `cooking.test.mjs` | Kroki, jednostki, podział pięter i zgodność kopii |
 | `sales.test.mjs` | Rozliczenia, walidacja i kopie zamówień |
 | `storage.test.mjs` | Sprawdzenie kolejki i konfliktów na atrapie bazy |
 | `engine.test.mjs` | Testy rachunkowe i walidacji |
@@ -195,7 +216,7 @@ python3 package.py
 
 ## Weryfikacja tej wersji
 
-Wykonano 41 testów: 23 silnika kalkulacji i jednostek, 6 modułu sprzedaży, 9 aplikacji oraz 3 transakcyjnego adaptera zapisu. Wszystkie przeszły. Zweryfikowano składnię JavaScript i odwołania do lokalnych zasobów.
+Wykonano 49 testów: 23 silnika kalkulacji i jednostek, 6 modułu sprzedaży, 10 aplikacji, 7 trybu przygotowania oraz 3 transakcyjnego adaptera zapisu. Wszystkie przeszły. Zweryfikowano składnię JavaScript i odwołania do lokalnych zasobów.
 
 Testy widoków używają atrap granicy DOM, a testy zapisu atrap granicy IndexedDB. Nie weryfikują zachowania rzeczywistej przeglądarki, aparatu ani jakości kompresji zdjęć. Nie wykonano pełnych testów w przeglądarce ani rzeczywistej publikacji na koncie GitHub użytkownika. Przed pracą produkcyjną sprawdź dodanie zdjęcia, zapis i ponowne otwarcie zamówienia, odczyt JSON oraz druk na swoim urządzeniu.
 
@@ -210,3 +231,11 @@ Przegląd źródeł: 6–7 września 2026 r.
 - [GitHub Pages — konfiguracja źródła publikacji](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
 
 Wniosek projektowy: rozdzielamy geometrię receptury, koszt rzeczywistego zużycia, zakupy pełnych opakowań i cenę sprzedaży. Kod, wzory dla poszczególnych elementów tortu oraz archiwum są własną implementacją; żaden z powyższych serwisów nie jest zależnością aplikacji ani źródłem bieżących cen. Źródła nie potwierdzają poprawności demonstracyjnych receptur.
+
+### Techniki przygotowania użyte w przykładach
+
+Sprawdzone 9 września 2026 r. Instrukcje w aplikacji są autorską, demonstracyjną procedurą dopasowaną do istniejących składników; nie są kopią poniższych przepisów i źródła nie poświadczają proporcji naszych tortów.
+
+- [Moje Wypieki — Biszkopt, najlepszy przepis](https://mojewypieki.com/przepis/biszkopt-najlepszy-przepis): ubijanie masy jajecznej i delikatne łączenie składników.
+- [Moje Wypieki — Tort śmietankowo-truskawkowy](https://mojewypieki.com/przepis/tort-smietankowo-truskawkowy-najprostszy): krem ze schłodzonej śmietanki i mascarpone.
+- [Słodki Pomysł — krem ze śmietany](https://slodkipomysl.pl/krem-ze-smietany/): kontrola gęstości podczas ubijania; czas zależy od proporcji i miksera.

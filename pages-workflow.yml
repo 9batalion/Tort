@@ -29,6 +29,8 @@ jobs:
           node --check data.js
           node --check sales-ui.js
           node --check storage.js
+          node --check cooking.js
+          node --check demo-steps.js
       - name: Sprawdź obliczenia i widoki
         run: node --test *.test.mjs
       - uses: actions/configure-pages@v5
