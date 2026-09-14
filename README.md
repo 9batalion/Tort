@@ -106,11 +106,11 @@ Karta zamówienia zawiera **notatki wewnętrzne i dane kontaktowe**, więc jest 
 - Pole koła: `π × (d / 2)²`.
 - Pole prostokąta: `a × b`.
 - Objętość: `pole × wysokość`.
-- Tynk: `pole wierzchu + obwód × wysokość`, bez spodu.
+Współczynnik całej receptury jest liczony dokładnie jako:
 
-Każdy współczynnik jest stosunkiem odpowiedniej wielkości docelowej do bazowej. Dla kremu stosunek pól mnożymy przez stosunek liczby przełożeń. Nie dokładamy ponownie mnożnika wysokości.
+`objętość formy docelowej / objętość formy bazowej`
 
-Wysokość oznacza **cały gotowy tort**. Skalowanie biszkoptu objętością jest modelem przy stałym udziale biszkoptu w torcie; krem zakłada stałą grubość warstwy. Gdy zmieniasz kompozycję lub proporcję kremu do biszkoptu, przygotuj osobny wzór. Każde piętro liczymy oddzielnie, z własnym wierzchem i bokami. Silnik nie projektuje wsporników i konstrukcji.
+Ten sam współczynnik stosujemy do **każdego składnika**: biszkoptu, kremu, owoców, tynku i dekoracji zapisanych w recepturze. Wysokość jest częścią objętości. Liczba przełożeń pozostaje informacją technologiczną i nie zmienia przelicznika. Każde piętro liczymy oddzielnie. Silnik nie projektuje wsporników i konstrukcji.
 
 Przykłady kontrolne:
 
@@ -119,8 +119,8 @@ Przykłady kontrolne:
 | Ø20 → Ø24, ta sama wysokość | 1,44 |
 | Ø20 → Ø30, ta sama wysokość | 2,25 |
 | Ø20, wys. 10 → blacha 20 × 30, wys. 15 | ok. 2,864789 |
-| Krem Ø20, 2 przełożenia → Ø24, 3 przełożenia | 2,16 |
-| Tynk Ø20, wys. 10 → Ø30, wys. 20 | 2,75 |
+| Ø20, wys. 10 → Ø24, wys. 20 | 2,88 |
+| Ø20, wys. 10 → Ø30, wys. 20 | 4,50 |
 
 ### Ilości i koszt
 
@@ -134,7 +134,7 @@ Przykłady kontrolne:
 
 Przykład: 100 g produktu jadalnego przy stracie 10% wymaga 111,11 g produktu zakupionego. Mnożenie przez 1,10 dałoby nieprawidłową ilość.
 
-Zapas technologiczny zwiększa tylko składniki wagowe i objętościowe. Składniki w sztukach zaokrąglamy w górę do pełnej sztuki, bez dodatkowego procentu. Pozycje ze skalowaniem „Stała ilość na piętro”, np. topper, zachowują ilość bazową i również nie otrzymują zapasu. Nie naliczaj tej samej dekoracji równocześnie w recepturze i w kosztach dodatkowych.
+Zapas technologiczny zwiększa tylko składniki wagowe i objętościowe. Składniki w sztukach zaokrąglamy w górę do pełnej sztuki, bez dodatkowego procentu. Wszystkie pozycje receptury używają tego samego współczynnika formy. Nie naliczaj tej samej dekoracji równocześnie w recepturze i w kosztach dodatkowych.
 
 Lista zakupów odejmuje magazyn, a brak zaokrągla w górę do pełnych opakowań. Koszt tortu obejmuje tylko zużytą część, także z posiadanych składników. Zapis wyceny nie zmienia stanu magazynu.
 

@@ -9,11 +9,13 @@ const calc=s=>calculate(s.ingredients,s.recipes,s.order);
 test('Round area and volume use radius, not diameter',()=>{near(geometry(base).area,Math.PI*100);near(geometry(base).volume,Math.PI*1000);});
 test('Diameter 20 to 24 at same height: 1.44',()=>near(scale('volume',base,{...base,diameter:24}),1.44));
 test('Round to rectangular, changed height',()=>near(scale('volume',base,{...base,shape:'rect',width:20,length:30,height:15}),9000/(1000*Math.PI)));
-test('Cream scales by area and filling layers, not overall height again',()=>near(scale('filling',base,{...base,diameter:24,height:20,layers:3}),2.16));
-test('Coating uses top plus sides without underside',()=>near(scale('coating',base,{...base,diameter:30,height:20}),(225*Math.PI+600*Math.PI)/(100*Math.PI+200*Math.PI)));
-test('Perimeter and fixed decorations have independent scaling',()=>{near(scale('perimeter',base,{...base,diameter:30}),1.5);near(scale('fixed',base,{...base,diameter:30}),1);});
+test('Every legacy scaling mode uses the same volume ratio as the Torty calculator',()=>{
+  const target={...base,diameter:24,height:20,layers:3};
+  for(const mode of ['volume','filling','coating','area','perimeter','fixed'])near(scale(mode,base,target),2.88);
+});
 test('Mass and volume units convert only within dimension',()=>{near(convert(1,'kg','g'),1000);near(convert(250,'ml','l'),.25);assert.throws(()=>convert(100,'g','ml'));});
 test('Loss uses gross-up and reserve is applied once',()=>{const s=fixture();s.ingredients[0].loss=10;s.order.reserve=10;const r=calc(s);near(r.rows[0].net,110);near(r.rows[0].gross,110/.9);near(r.total,110/.9/1000*10);});
+test('Recipe rows use one common form-volume factor regardless of their saved legacy mode',()=>{const s=fixture();s.recipes[0].rows[0].mode='filling';s.order.tiers[0]={...s.order.tiers[0],diameter:24,height:20,layers:3};const r=calc(s);near(r.rows[0].factor,2.88);near(r.rows[0].net,288);});
 test('Shopping aggregates before rounding packages, inventory reduces purchase not cost',()=>{const s=fixture();s.recipes[0].rows[0].qty=600;s.order.tiers.push({...base,recipeId:'r'});s.ingredients[0].stock=.5;const r=calc(s);near(r.total,12);assert.equal(r.shopping.length,1);assert.equal(r.shopping[0].packs,1);near(r.shopping[0].missing,700);near(r.shopping[0].leftover,300);near(r.shoppingCost,10);});
 test('Exact package quantity has no spurious additional package',()=>{const s=fixture();s.recipes[0].rows[0].qty=1000;assert.equal(calc(s).shopping[0].packs,1);});
 test('Margin 30 percent is cost / 0.7, not markup',()=>{const s=fixture();s.order.overhead=69;s.order.margin=30;const r=calc(s);near(r.total,70);near(r.suggested,100);near(r.profit,30);near(r.actualMargin,30);});
@@ -26,7 +28,7 @@ test('Reject zero dimensions, fractional layers, unknown ingredients and invalid
 test('Backup validation rejects duplicate ids and incompatible units',()=>{const s=fixture();s.ingredients.push({...s.ingredients[0]});assert.throws(()=>validateState(s));const t=fixture();t.recipes[0].rows[0].unit='ml';assert.throws(()=>validateState(t));});
 test('Demonstration data are valid and calculable',()=>{const s=initialState();validateState(s);const r=calc(s);assert.ok(r.sale>r.total);assert.ok(r.shoppingCost>0);assert.ok(r.portions>0);});
 
-test('Piece ingredients round upward and fixed pieces ignore reserve',()=>{
+test('Piece ingredients round upward after common form scaling',()=>{
   const s=fixture();
   s.ingredients[0]={...s.ingredients[0],unit:'szt',pack:10,stock:0};
   s.recipes[0].rows=[{ingredientId:'one',qty:3,unit:'szt',mode:'volume',group:'Ciasto'}];
@@ -34,7 +36,7 @@ test('Piece ingredients round upward and fixed pieces ignore reserve',()=>{
   const scaled=calc(s);
   assert.equal(scaled.rows[0].net,4);assert.equal(scaled.rows[0].gross,4);assert.equal(scaled.shopping[0].gross,4);
   s.recipes[0].rows[0].qty=1;s.recipes[0].rows[0].mode='fixed';
-  const fixed=calc(s);assert.equal(fixed.rows[0].net,1);
+  const legacyFixed=calc(s);assert.equal(legacyFixed.rows[0].net,2);
 });
 test('Piece packages, stock and base recipes require whole numbers',()=>{
   for(const mutate of [s=>s.ingredients[0].pack=10.5,s=>s.ingredients[0].stock=.5,s=>s.recipes[0].rows[0].qty=1.5]){
