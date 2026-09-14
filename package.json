@@ -1,11 +1,11 @@
 {
   "name": "pracownia-tortow",
-  "version": "1.3.0",
+  "version": "1.5.0",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test *.test.mjs",
-    "check": "node --check app.js && node --check engine.js && node --check data.js && node --check sales-ui.js && node --check storage.js && node --check cooking.js && node --check demo-steps.js",
+    "check": "node --check app.js && node --check engine.js && node --check data.js && node --check sales-ui.js && node --check clients-ui.js && node --check storage.js && node --check cooking.js && node --check demo-steps.js",
     "serve": "python3 -m http.server 8080"
   }
 }

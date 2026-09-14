@@ -7,7 +7,7 @@ root = Path(__file__).resolve().parent
 html = (root / 'index.html').read_text(encoding='utf-8')
 css = (root / 'style.css').read_text(encoding='utf-8')
 parts = []
-for name in ['engine.js', 'demo-steps.js', 'data.js', 'storage.js', 'sales-ui.js', 'cooking.js', 'app.js']:
+for name in ['engine.js', 'demo-steps.js', 'data.js', 'storage.js', 'sales-ui.js', 'clients-ui.js', 'cooking.js', 'app.js']:
     js = (root / name).read_text(encoding='utf-8')
     js = re.sub(r'^import .*;\n', '', js, flags=re.M)
     js = re.sub(r'\bexport (?=(?:function|const|class)\b)', '', js)
