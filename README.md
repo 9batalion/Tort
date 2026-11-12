@@ -1,6 +1,6 @@
 # Pracownia Tortów — wszystko w jednym folderze
 
-Polska aplikacja do receptur, przeliczania form, planowania składników i wyceny tortów. Gotowa do GitHub Pages. Wersja 1.5 zachowuje kartotekę klientów i reset kalkulatora, a przelicznik form odwzorowuje logikę `torty.html` 1:1: osobna forma z przepisu i forma docelowa, wspólny współczynnik objętości oraz zaokrąglenie składników do 2 miejsc. Własny silnik JavaScript, bez konta, backendu, płatnego API, bibliotek pobieranych z CDN i instalowania zależności.
+Polska aplikacja do receptur, przeliczania form, planowania składników i wyceny tortów. Gotowa do GitHub Pages. Wersja 1.5 rozszerza sugerowaną cenę o samodzielną stawkę za porcję, tryby wyceny, mnożnik ceny, ręczny przelicznik składników oraz własną liczbę porcji. Zachowuje kartotekę klientów, zamówienia i reset kalkulatora. Własny silnik JavaScript, bez konta, backendu, płatnego API, bibliotek pobieranych z CDN i instalowania zależności.
 
 ## Szybki podgląd
 
@@ -29,7 +29,7 @@ Plik `pages-workflow.yml` zachowano jako opcjonalny szablon dla osób, które p�
 
 ## Zrób krok po kroku — przygotowanie po przeliczeniu
 
-Po ustawieniu rozmiaru w **Kalkulatorze tortu** kliknij **Zrób krok po kroku**. Dostaniesz kolejne etapy przygotowania i potrzebne na danym etapie składniki w już przeliczonych ilościach. Na przykład dla domyślnego przeliczenia Ø20 → Ø24 cm krok biszkoptu pokazuje 8,64 jaj — dokładnie tak jak przelicznik `torty.html`, bez automatycznego zaokrąglania do 9 szt.
+Po ustawieniu rozmiaru w **Kalkulatorze tortu** kliknij **Zrób krok po kroku**. Dostaniesz kolejne etapy przygotowania i potrzebne na danym etapie składniki w już przeliczonych ilościach. Na przykład dla domyślnego tortu Ø24 cm krok biszkoptu pokazuje 9 jaj w sztukach.
 
 - Nawiguj przyciskami **Wstecz**, **Odhacz wykonany** i **Gotowe — dalej** lub wybierz etap z listy.
 - Odhaczenia i bieżący etap zapisują się lokalnie i w pełnej kopii JSON. Po ponownym otwarciu tego samego tortu można wrócić do pracy.
@@ -58,6 +58,20 @@ Zakładka **Klienci** przechowuje kartotekę bezpośrednio w lokalnej bazie Inde
 - klienci są objęci pełnym eksportem/importem JSON razem z pozostałymi danymi pracowni.
 
 Dane są lokalne dla konkretnej przeglądarki i adresu strony. Jeśli potrzebujesz pracy na kilku urządzeniach, przenoś pełną kopię JSON.
+
+## Edytowalna sugerowana cena tortu (wersja 1.5)
+
+W **Kalkulatorze tortu → Ustawienia wyceny** możesz niezależnie wpisać cenę za porcję, mnożnik ceny, docelową marżę, zaokrąglenie, stawkę godzinową i liczbę godzin. Dostępne są trzy tryby kalkulacji:
+
+- **Koszt + marża** — dotychczasowy wynik pełny koszt / (1 − marża / 100). Cena porcji pełni wtedy funkcję porównawczą.
+- **Własna cena za porcję** — liczba szacowanych lub ręcznie podanych porcji × stawka za porcję. Robocizna jest już częścią kosztu wykazywanego obok i **nie jest drugi raz dodawana** do ceny opartej o porcje. Jeśli stawka nie pokrywa kosztów, aplikacja pokaże stratę.
+- **Wyższa z dwóch** — wybiera wyższą kwotę z kalkulacji kosztowej i wyceny według porcji.
+
+Następnie wspólny mnożnik wyceny (domyślnie ×1) zwiększa lub zmniejsza otrzymany wynik, a zaokrąglenie działa w górę. Własna cena całego zamówienia pozostaje nadrzędna nad rekomendacją. Panel pokazuje bazowe ceny z obu metod, koszt robocizny, cenę na tort i cenę na porcję.
+
+Dla każdego piętra możesz wprowadzić **ręczny przelicznik składników** (np. 1,4) zamiast automatycznego stosunku objętości form. Dotyczy on ilości składników i kosztu, a nie wymiarów fizycznych ani liczby porcji. Aby przywrócić przelicznik automatyczny, wyczyść pole. W razie potrzeby możesz również podać **ręczną liczbę porcji na jeden tort** zamiast szacunku z objętości.
+
+Zmiany zapisują się w IndexedDB, pełnych kopiach JSON i nowych archiwalnych wycenach. Wczytanie starszych kopii i archiwów nadal jest obsługiwane.
 
 ## Reset kalkulatora
 
@@ -98,7 +112,7 @@ Karta zamówienia zawiera **notatki wewnętrzne i dane kontaktowe**, więc jest 
 
 ## Funkcje
 
-- **Kalkulator tortu:** widoczna „Forma z przepisu” i „Twoja forma”, dowolna średnica lub blacha, wysokość formy, wiele pięter i liczba identycznych tortów.
+- **Kalkulator tortu:** dowolna średnica, formy prostokątne i kwadratowe, wysokość, liczba przełożeń, wiele pięter i liczba identycznych tortów.
 - **Receptury:** tworzenie, edycja, duplikowanie, usuwanie, własna forma bazowa, składniki, sekcje oraz instrukcja przygotowania.
 - **Jeden spójny sposób skalowania:** wszystkie pozycje receptury korzystają z tego samego współczynnika objętości formy docelowej do bazowej.
 - **Baza składników:** cena i wielkość opakowania, jednostka, straty, magazyn, alergen i dostawca/uwaga o cenie.
@@ -115,7 +129,7 @@ Karta zamówienia zawiera **notatki wewnętrzne i dane kontaktowe**, więc jest 
 1. Zastąp ceny przykładowe rzeczywistymi cenami zakupu.
 2. Zastąp receptury demonstracyjne własnymi, sprawdzonymi przepisami. Początkowe receptury nie były testowane wypiekiem.
 3. Określ jednostki zgodnie z tym, jak mierzysz składniki.
-4. Wprowadź dokładne wymiary formy z przepisu i liczbę warstw kremu.
+4. Wprowadź wielkość bazowego gotowego tortu i liczbę warstw kremu.
 5. Ustaw własną stawkę pracy i pozostałe koszty.
 6. Sprawdź wycenę znanego tortu, zanim użyjesz aplikacji do nowego zamówienia.
 
@@ -144,9 +158,9 @@ Przykłady kontrolne:
 
 ### Ilości i koszt
 
-`ilość po przeliczeniu = Math.round((ilość bazowa × współczynnik) × 100) / 100`
+`ilość wagowa lub objętościowa = wzór × współczynnik × liczba tortów × (1 + zapas technologiczny / 100)`
 
-Ta sama zasada obowiązuje dla g, kg, ml, l i szt. Jeśli kalkulujesz kilka identycznych tortów, już przeliczona ilość jest następnie mnożona przez liczbę tortów.
+`liczba sztuk = ceil(wzór × współczynnik × liczba tortów)`
 
 `zużycie zakupowe brutto = ilość do receptury / (1 − strata składnika / 100)`
 
@@ -154,7 +168,7 @@ Ta sama zasada obowiązuje dla g, kg, ml, l i szt. Jeśli kalkulujesz kilka iden
 
 Przykład: 100 g produktu jadalnego przy stracie 10% wymaga 111,11 g produktu zakupionego. Mnożenie przez 1,10 dałoby nieprawidłową ilość.
 
-Zapas technologiczny nie zmienia wyniku przelicznika receptury. Jest stosowany dopiero w warstwie zakupowej i kosztowej (dla pozycji wagowych i objętościowych). Wszystkie pozycje receptury — także sztuki — używają tego samego współczynnika formy i tego samego zaokrąglenia do 2 miejsc. Nie naliczaj tej samej dekoracji równocześnie w recepturze i w kosztach dodatkowych.
+Zapas technologiczny zwiększa tylko składniki wagowe i objętościowe. Składniki w sztukach zaokrąglamy w górę do pełnej sztuki, bez dodatkowego procentu. Wszystkie pozycje receptury używają tego samego współczynnika formy. Nie naliczaj tej samej dekoracji równocześnie w recepturze i w kosztach dodatkowych.
 
 Lista zakupów odejmuje magazyn, a brak zaokrągla w górę do pełnych opakowań. Koszt tortu obejmuje tylko zużytą część, także z posiadanych składników. Zapis wyceny nie zmienia stanu magazynu.
 
@@ -174,11 +188,11 @@ Kwoty wpisuj konsekwentnie netto albo brutto. Silnik nie rozlicza VAT, podatku d
 
 W ramach masy przeliczamy g ↔ kg, a objętości ml ↔ l. Nie zakładamy, że 1 ml = 1 g. Używaj zgodnych jednostek albo ustal masę netto opakowania i utwórz składnik wagowy.
 
-Jaja demonstracyjne są prowadzone w sztukach: opakowanie 10 szt. i 6 szt. w recepturze bazowej. Cena jest przykładowa. Tak samo konfiguruj inne produkty liczone pojedynczo. Dla jednostki „szt.” wielkość opakowania i magazyn muszą być liczbami całkowitymi, ale ilość bazowa receptury może być dziesiętna. Po zmianie rozmiaru formy wynik nie jest zaokrąglany do pełnych sztuk: 8,64 jaja pozostaje 8,64 szt., tak samo jak w `torty.html`.
+Jaja demonstracyjne są prowadzone w sztukach: opakowanie 10 szt. i 6 szt. w recepturze bazowej. Cena jest przykładowa. Tak samo konfiguruj inne produkty liczone pojedynczo. Dla jednostki „szt.” wielkość opakowania, magazyn i ilość bazowa muszą być liczbami całkowitymi. Po zmianie rozmiaru formy wynik jest zaokrąglany w górę osobno dla każdego piętra, np. 8,64 jaja daje 9 szt. Procentowy zapas technologiczny nie jest doliczany do sztuk.
 
 Porcje to suma `floor(objętość piętra / objętość porcji)`, z minimum jednej porcji na piętro, pomnożona przez liczbę tortów. Domyślne 180 cm³ jest edytowalnym założeniem, nie normą. Nie wyznaczamy masy całego tortu z mieszaniny gramów, ml i sztuk.
 
-Współczynnik zachowuje pełną precyzję, a każda ilość składnika jest następnie zaokrąglana do 2 miejsc dokładnie tak jak w `torty.html`. Warstwa zakupowa może używać dalszej precyzji przy stratach i kosztach.
+Pełna precyzja jest zachowana do obliczenia wyniku. Tabele zaokrąglają liczby do prezentacji; ich widoczne sumy mogą różnić się o grosze od wyniku.
 
 ## Dane i prywatność
 

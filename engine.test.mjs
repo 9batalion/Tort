@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {initialState,migrateState} from './data.js';
-import {geometry,scale,convert,calculate,validateState,tortyAmount} from './engine.js';
+import {geometry,scale,convert,calculate,validateState} from './engine.js';
 const near=(actual,expected)=>assert.ok(Math.abs(actual-expected)<1e-8,`${actual} != ${expected}`);
 const base={shape:'round',diameter:20,width:20,length:30,height:10,layers:2};
 function fixture(){const s=initialState();s.ingredients=[{id:'one',name:'Mąka',pack:1,unit:'kg',price:10,loss:0,stock:0,allergens:'pszenica',supplier:''}];s.recipes=[{id:'r',name:'Test',base,notes:'',rows:[{ingredientId:'one',qty:100,unit:'g',mode:'volume',group:'Ciasto'}]}];s.order={...s.order,tiers:[{...base,recipeId:'r'}],count:1,reserve:0,hours:0,rate:0,packaging:0,decoration:0,delivery:0,energyKwh:0,energyPrice:0,overhead:0,margin:0,roundTo:.01,sale:null,portionVolume:100};return s;}
@@ -14,7 +14,7 @@ test('Every legacy scaling mode uses the same volume ratio as the Torty calculat
   for(const mode of ['volume','filling','coating','area','perimeter','fixed'])near(scale(mode,base,target),2.88);
 });
 test('Mass and volume units convert only within dimension',()=>{near(convert(1,'kg','g'),1000);near(convert(250,'ml','l'),.25);assert.throws(()=>convert(100,'g','ml'));});
-test('Reserve and loss do not alter Torty recipe proportions, only shopping/cost layer',()=>{const s=fixture();s.ingredients[0].loss=10;s.order.reserve=10;const r=calc(s);near(r.rows[0].net,100);near(r.shopping[0].gross,110/.9);near(r.total,110/.9/1000*10);});
+test('Loss uses gross-up and reserve is applied once',()=>{const s=fixture();s.ingredients[0].loss=10;s.order.reserve=10;const r=calc(s);near(r.rows[0].net,110);near(r.rows[0].gross,110/.9);near(r.total,110/.9/1000*10);});
 test('Recipe rows use one common form-volume factor regardless of their saved legacy mode',()=>{const s=fixture();s.recipes[0].rows[0].mode='filling';s.order.tiers[0]={...s.order.tiers[0],diameter:24,height:20,layers:3};const r=calc(s);near(r.rows[0].factor,2.88);near(r.rows[0].net,288);});
 test('Shopping aggregates before rounding packages, inventory reduces purchase not cost',()=>{const s=fixture();s.recipes[0].rows[0].qty=600;s.order.tiers.push({...base,recipeId:'r'});s.ingredients[0].stock=.5;const r=calc(s);near(r.total,12);assert.equal(r.shopping.length,1);assert.equal(r.shopping[0].packs,1);near(r.shopping[0].missing,700);near(r.shopping[0].leftover,300);near(r.shoppingCost,10);});
 test('Exact package quantity has no spurious additional package',()=>{const s=fixture();s.recipes[0].rows[0].qty=1000;assert.equal(calc(s).shopping[0].packs,1);});
@@ -28,35 +28,20 @@ test('Reject zero dimensions, fractional layers, unknown ingredients and invalid
 test('Backup validation rejects duplicate ids and incompatible units',()=>{const s=fixture();s.ingredients.push({...s.ingredients[0]});assert.throws(()=>validateState(s));const t=fixture();t.recipes[0].rows[0].unit='ml';assert.throws(()=>validateState(t));});
 test('Demonstration data are valid and calculable',()=>{const s=initialState();validateState(s);const r=calc(s);assert.ok(r.sale>r.total);assert.ok(r.shoppingCost>0);assert.ok(r.portions>0);});
 
-test('Piece ingredients follow Torty exactly and may remain fractional',()=>{
+test('Piece ingredients round upward after common form scaling',()=>{
   const s=fixture();
   s.ingredients[0]={...s.ingredients[0],unit:'szt',pack:10,stock:0};
   s.recipes[0].rows=[{ingredientId:'one',qty:3,unit:'szt',mode:'volume',group:'Ciasto'}];
   s.order.tiers[0].diameter=21;s.order.reserve=50;
   const scaled=calc(s);
-  assert.equal(scaled.rows[0].net,3.31);assert.equal(scaled.shopping[0].gross,3.31);
-  s.recipes[0].rows[0].qty=1.5;
-  const fractional=calc(s);assert.equal(fractional.rows[0].net,1.65);
+  assert.equal(scaled.rows[0].net,4);assert.equal(scaled.rows[0].gross,4);assert.equal(scaled.shopping[0].gross,4);
+  s.recipes[0].rows[0].qty=1;s.recipes[0].rows[0].mode='fixed';
+  const legacyFixed=calc(s);assert.equal(legacyFixed.rows[0].net,2);
 });
-test('Piece package size and stock still require whole numbers',()=>{
-  for(const mutate of [s=>s.ingredients[0].pack=10.5,s=>s.ingredients[0].stock=.5]){
+test('Piece packages, stock and base recipes require whole numbers',()=>{
+  for(const mutate of [s=>s.ingredients[0].pack=10.5,s=>s.ingredients[0].stock=.5,s=>s.recipes[0].rows[0].qty=1.5]){
     const s=fixture();s.ingredients[0]={...s.ingredients[0],unit:'szt',pack:10,stock:0};s.recipes[0].rows=[{ingredientId:'one',qty:2,unit:'szt',mode:'volume',group:'Ciasto'}];mutate(s);assert.throws(()=>calc(s),/całkowit/);
   }
-});
-test('Torty reference example 18x5 to 24x6 matches exactly including 2-decimal rounding',()=>{
-  const original={shape:'round',diameter:18,height:5};
-  const target={shape:'round',diameter:24,height:6,layers:2};
-  const ratio=scale('volume',original,target);
-  near(ratio,(Math.PI*12**2*6)/(Math.PI*9**2*5));
-  assert.equal(tortyAmount(100,ratio),213.33);
-  assert.equal(tortyAmount(6,ratio),12.8);
-});
-test('Calculator uses editable original form override instead of silently using recipe base',()=>{
-  const s=fixture();
-  s.order.tiers[0]={...s.order.tiers[0],diameter:24,height:6,original:{shape:'round',diameter:18,height:5}};
-  const r=calc(s);
-  assert.equal(r.rows[0].net,213.33);
-  near(r.rows[0].factor,(Math.PI*12**2*6)/(Math.PI*9**2*5));
 });
 test('Fresh demonstration recipes use eggs in pieces',()=>{
   const s=initialState(),egg=s.ingredients.find(i=>i.id==='egg');assert.equal(egg.unit,'szt');assert.equal(egg.pack,10);
@@ -66,4 +51,31 @@ test('Untouched legacy demonstration eggs migrate once, custom eggs stay unchang
   const s=initialState(),egg=s.ingredients.find(i=>i.id==='egg');egg.name='Jaja — masa bez skorupki';egg.unit='g';egg.pack=500;for(const r of s.recipes){const row=r.rows.find(x=>x.ingredientId==='egg');row.qty=300;row.unit='g';}
   const first=migrateState(s);assert.equal(first.changed,true);assert.equal(egg.unit,'szt');assert.equal(egg.pack,10);assert.equal(migrateState(s).changed,false);
   const custom=initialState();custom.ingredients.find(i=>i.id==='egg').price=20;assert.equal(migrateState(custom).changed,false);
+});
+
+test('Editable portion price offers three pricing modes without counting labor twice',()=>{
+  const s=fixture();s.order.overhead=69;s.order.margin=30;s.order.portionsOverride=10;s.order.portionPrice=12.40;s.order.roundTo=5;
+  s.order.pricingMode='cost';let r=calc(s);near(r.costBased,100);near(r.portionBased,124);near(r.suggested,100);
+  s.order.pricingMode='portion';r=calc(s);near(r.suggested,125);near(r.portions,10);near(r.perPortion,12.5);
+  s.order.pricingMode='higher';r=calc(s);near(r.suggested,125);
+  s.order.hours=2;s.order.rate=10;r=calc(s);near(r.costs.labor,20);near(r.total,90);near(r.portionBased,124);near(r.suggested,130);
+  s.order.pricingMode='portion';r=calc(s);near(r.suggested,125); // labor stays in cost only
+  s.order.priceMultiplier=1.2;r=calc(s);near(r.suggested,150);
+  s.order.sale=99;r=calc(s);near(r.sale,99);near(r.suggested,150);
+});
+test('Manual scaling replaces automatic recipe factor but not geometry or portion estimate',()=>{
+  const s=fixture();s.order.tiers[0].diameter=24;const auto=calc(s);
+  near(auto.rows[0].factor,1.44);
+  s.order.tiers[0].scaleOverride=2;let r=calc(s);
+  near(r.rows[0].factor,2);near(r.rows[0].net,200);near(r.costs.ingredients,2);
+  near(r.tiers[0].automaticVolumeFactor,1.44);near(r.tiers[0].volumeFactor,2);
+  assert.equal(r.portions,auto.portions);
+  s.order.tiers[0].scaleOverride=null;r=calc(s);near(r.rows[0].factor,1.44);
+});
+test('Manual portion count and new fields are optional for old backups and validated when used',()=>{
+  const old=fixture();delete old.order.portionPrice;delete old.order.pricingMode;delete old.order.priceMultiplier;delete old.order.portionsOverride;
+  validateState(old);near(calc(old).suggested,1);
+  for(const mutate of [s=>s.order.pricingMode='error',s=>s.order.portionPrice=-1,s=>s.order.portionsOverride=5.5,s=>s.order.portionsOverride=0,s=>s.order.priceMultiplier=0,s=>s.order.tiers[0].scaleOverride=-1]){
+    const s=fixture();mutate(s);assert.throws(()=>validateState(s));
+  }
 });

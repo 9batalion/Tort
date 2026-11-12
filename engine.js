@@ -2,96 +2,13 @@
 export const UNITS={g:{dimension:'mass',factor:1,base:'g'},kg:{dimension:'mass',factor:1000,base:'g'},ml:{dimension:'volume',factor:1,base:'ml'},l:{dimension:'volume',factor:1000,base:'ml'},szt:{dimension:'count',factor:1,base:'szt'}};
 export const MODES={volume:'Objętość — biszkopt',filling:'Powierzchnia × przełożenia',coating:'Wierzch + boki — tynk',area:'Powierzchnia — pojedyncza warstwa',perimeter:'Obwód — dekoracja brzegu',fixed:'Stała ilość na piętro'};
 function finite(n,label,min=0,max=1e9){if(typeof n!=='number'||!Number.isFinite(n)||n<min||n>max)throw Error(`${label}: podaj liczbę od ${min} do ${max}.`);return n;}
-export function formGeometry(p){
-  if(!p||!['round','rect'].includes(p.shape))throw Error('Nieznany kształt formy.');
-  finite(p.height,'Wysokość',0.1,200);
-  let area,perimeter;
-  if(p.shape==='round'){
-    finite(p.diameter,'Średnica',1,200);
-    area=Math.PI*Math.pow(p.diameter/2,2);
-    perimeter=Math.PI*p.diameter;
-  }else{
-    finite(p.width,'Szerokość',1,200);
-    finite(p.length,'Długość',1,200);
-    area=p.width*p.length;
-    perimeter=2*(p.width+p.length);
-  }
-  return {area,perimeter,volume:area*p.height,coating:area+perimeter*p.height};
-}
-export function geometry(p){
-  const g=formGeometry(p);
-  finite(p.layers,'Liczba przełożeń',1,30);
-  if(!Number.isInteger(p.layers))throw Error('Liczba przełożeń musi być całkowita.');
-  return g;
-}
-export function scale(mode,base,target){
-  if(!MODES[mode])throw Error('Nieznany sposób skalowania.');
-  const b=formGeometry(base),t=formGeometry(target);
-  return t.volume/b.volume;
-}
-// Dokładnie jak w torty.html: ilość bazowa × współczynnik, potem zaokrąglenie do 2 miejsc.
-export function tortyAmount(amount,ratio){
-  finite(amount,'Ilość',0);
-  finite(ratio,'Współczynnik',0);
-  return Math.round(amount*ratio*100)/100;
-}
+export function geometry(p){if(!p||!['round','rect'].includes(p.shape))throw Error('Nieznany kształt formy.');finite(p.height,'Wysokość',0.1,200);finite(p.layers,'Liczba przełożeń',1,30);if(!Number.isInteger(p.layers))throw Error('Liczba przełożeń musi być całkowita.');let area,perimeter;if(p.shape==='round'){finite(p.diameter,'Średnica',1,200);area=Math.PI*(p.diameter/2)**2;perimeter=Math.PI*p.diameter;}else{finite(p.width,'Szerokość',1,200);finite(p.length,'Długość',1,200);area=p.width*p.length;perimeter=2*(p.width+p.length);}return {area,perimeter,volume:area*p.height,coating:area+perimeter*p.height};}
+export function scale(mode,base,target){if(!MODES[mode])throw Error('Nieznany sposób skalowania.');const b=geometry(base),t=geometry(target);return t.volume/b.volume;}
 export function convert(q,from,to){finite(q,'Ilość');if(!UNITS[from]||!UNITS[to]||UNITS[from].dimension!==UNITS[to].dimension)throw Error('Niezgodne jednostki. Nie przeliczamy gramów na mililitry bez gęstości.');return q*UNITS[from].factor/UNITS[to].factor;}
 export function validateIngredient(i){if(!i||typeof i.id!=='string'||!i.id||typeof i.name!=='string'||!i.name.trim())throw Error('Składnik musi mieć nazwę i identyfikator.');if(!UNITS[i.unit])throw Error('Nieznana jednostka składnika.');finite(i.pack,'Wielkość opakowania',0.001);finite(i.price,'Cena opakowania');finite(i.loss,'Strata składnika',0,95);finite(i.stock,'Zapas');if(i.unit==='szt'&&(!Number.isInteger(i.pack)||!Number.isInteger(i.stock)))throw Error('Składniki liczone w sztukach muszą mieć całkowitą wielkość opakowania i stan magazynu.');if(typeof i.allergens!=='string'||typeof i.supplier!=='string')throw Error('Nieprawidłowy opis składnika.');return i;}
-export function validateRecipe(r,ingredients){if(!r||typeof r.id!=='string'||!r.id||typeof r.name!=='string'||!r.name.trim()||typeof r.notes!=='string')throw Error('Receptura musi mieć nazwę.');geometry(r.base);if(!Array.isArray(r.rows)||!r.rows.length||r.rows.length>300)throw Error('Receptura musi zawierać od 1 do 300 pozycji.');r.rows.forEach(x=>{const i=ingredients.find(i=>i.id===x.ingredientId);if(!i)throw Error('Receptura odwołuje się do nieistniejącego składnika.');finite(x.qty,'Ilość w recepturze',0.001);convert(x.qty,x.unit,UNITS[i.unit].base);if(!MODES[x.mode])throw Error('Nieprawidłowy sposób skalowania.');if(typeof x.group!=='string')throw Error('Nieprawidłowa sekcja receptury.');});validateRecipeSteps(r);return r;}
-export function validateOrder(o,recipes){if(!o||typeof o.name!=='string')throw Error('Nieprawidłowe dane kalkulacji.');if(!Array.isArray(o.tiers)||o.tiers.length<1||o.tiers.length>20)throw Error('Wymagane 1–20 pięter.');o.tiers.forEach(t=>{if(!recipes.some(r=>r.id===t.recipeId))throw Error('Brakuje receptury piętra.');geometry(t);if(t.original!==undefined)formGeometry(t.original);});for(const k of ['reserve','hours','rate','packaging','decoration','delivery','energyKwh','energyPrice','overhead','margin','roundTo','portionVolume'])finite(o[k],k);finite(o.reserve,'Zapas technologiczny',0,100);finite(o.margin,'Marża',0,95);finite(o.roundTo,'Zaokrąglenie',0.01,1000);finite(o.portionVolume,'Objętość porcji',10,2000);finite(o.count,'Liczba tortów',1,1000);if(!Number.isInteger(o.count))throw Error('Liczba tortów musi być całkowita.');if(o.sale!==null)finite(o.sale,'Cena sprzedaży');return o;}
-export function calculate(ingredients,recipes,order){
-  ingredients.forEach(validateIngredient);
-  recipes.forEach(r=>validateRecipe(r,ingredients));
-  validateOrder(order,recipes);
-  const rows=[],used=new Map(),allergens=new Set();
-  let volume=0;
-  const tiers=order.tiers.map((t,index)=>{
-    const recipe=recipes.find(r=>r.id===t.recipeId);
-    const original=t.original??recipe.base;
-    const factor=scale('volume',original,t);
-    volume+=formGeometry(t).volume;
-    for(const x of recipe.rows){
-      const i=ingredients.find(i=>i.id===x.ingredientId);
-      const ingredientUnit=UNITS[i.unit].base;
-      // 1:1 z torty.html: mnożymy ilość wpisaną w recepturze przez ratio i zaokrąglamy do 2 miejsc.
-      const calculatedAmount=tortyAmount(x.qty,factor);
-      // Liczba identycznych tortów jest rozszerzeniem pracowni; nie zmienia samego współczynnika formy.
-      const net=tortyAmount(calculatedAmount,order.count);
-      const netBase=convert(net,x.unit,ingredientUnit);
-      // Zapas i strata są wyłącznie warstwą zakupowo-kosztową. Nie zmieniają wyniku przelicznika receptury.
-      const reserveFactor=ingredientUnit==='szt'?1:1+order.reserve/100;
-      const plannedBase=netBase*reserveFactor;
-      const grossBase=plannedBase/(1-i.loss/100);
-      const packBase=i.pack*UNITS[i.unit].factor;
-      const cost=grossBase/packBase*i.price;
-      rows.push({...x,tier:index+1,name:i.name,unit:x.unit,factor,originalAmount:x.qty,calculatedAmount,net,netBase,plannedBase,grossBase,cost});
-      let sum=used.get(i.id);
-      if(!sum){
-        sum={id:i.id,name:i.name,unit:ingredientUnit,net:0,gross:0,cost:0,packBase,packPrice:i.price,stock:i.stock*UNITS[i.unit].factor};
-        used.set(i.id,sum);
-      }
-      sum.net+=netBase;
-      sum.gross+=grossBase;
-      sum.cost+=cost;
-      if(i.allergens.trim())allergens.add(i.allergens.trim());
-    }
-    return {
-      recipe:recipe.name,
-      volumeFactor:factor,
-      originalVolume:formGeometry(original).volume,
-      targetVolume:formGeometry(t).volume,
-      portionEstimate:Math.max(1,Math.floor(formGeometry(t).volume/order.portionVolume))
-    };
-  });
-  const shopping=[...used.values()].map(x=>{
-    const missing=Math.max(0,x.gross-x.stock),packs=missing?Math.ceil(missing/x.packBase-1e-12):0;
-    return {...x,missing,packs,buyCost:packs*x.packPrice,leftover:x.stock+packs*x.packBase-x.gross};
-  });
-  const ingredientsCost=rows.reduce((s,r)=>s+r.cost,0),n=order.count;
-  const costs={ingredients:ingredientsCost,labor:order.hours*order.rate*n,packaging:order.packaging*n,decoration:order.decoration*n,energy:order.energyKwh*order.energyPrice*n,overhead:order.overhead*n,delivery:order.delivery};
-  const total=Object.values(costs).reduce((s,v)=>s+v,0),suggested=Math.ceil((total/(1-order.margin/100))/order.roundTo-1e-12)*order.roundTo,sale=order.sale??suggested,profit=sale-total,actualMargin=sale?profit/sale*100:null,portions=tiers.reduce((s,t)=>s+t.portionEstimate,0)*n;
-  return {rows,shopping,tiers,costs,total,suggested,sale,profit,actualMargin,portions,perPortion:sale/portions,perCake:sale/n,volume:volume*n,allergens:[...allergens],shoppingCost:shopping.reduce((s,x)=>s+x.buyCost,0)};
-}
+export function validateRecipe(r,ingredients){if(!r||typeof r.id!=='string'||!r.id||typeof r.name!=='string'||!r.name.trim()||typeof r.notes!=='string')throw Error('Receptura musi mieć nazwę.');geometry(r.base);if(!Array.isArray(r.rows)||!r.rows.length||r.rows.length>300)throw Error('Receptura musi zawierać od 1 do 300 pozycji.');r.rows.forEach(x=>{const i=ingredients.find(i=>i.id===x.ingredientId);if(!i)throw Error('Receptura odwołuje się do nieistniejącego składnika.');finite(x.qty,'Ilość w recepturze',0.001);if(x.unit==='szt'&&!Number.isInteger(x.qty))throw Error('Ilość składnika w sztukach musi być liczbą całkowitą.');convert(x.qty,x.unit,UNITS[i.unit].base);if(!MODES[x.mode])throw Error('Nieprawidłowy sposób skalowania.');if(typeof x.group!=='string')throw Error('Nieprawidłowa sekcja receptury.');});validateRecipeSteps(r);return r;}
+export function validateOrder(o,recipes){if(!o||typeof o.name!=='string')throw Error('Nieprawidłowe dane kalkulacji.');if(!Array.isArray(o.tiers)||o.tiers.length<1||o.tiers.length>20)throw Error('Wymagane 1–20 pięter.');o.tiers.forEach(t=>{if(!recipes.some(r=>r.id===t.recipeId))throw Error('Brakuje receptury piętra.');geometry(t);if(t.scaleOverride!==undefined&&t.scaleOverride!==null)finite(t.scaleOverride,'Ręczny przelicznik składników',0.01,100);});for(const k of ['reserve','hours','rate','packaging','decoration','delivery','energyKwh','energyPrice','overhead','margin','roundTo','portionVolume'])finite(o[k],k);finite(o.reserve,'Zapas technologiczny',0,100);finite(o.margin,'Marża',0,95);finite(o.roundTo,'Zaokrąglenie',0.01,1000);finite(o.portionVolume,'Objętość porcji',10,2000);finite(o.count,'Liczba tortów',1,1000);if(!Number.isInteger(o.count))throw Error('Liczba tortów musi być całkowita.');if(o.sale!==null)finite(o.sale,'Cena sprzedaży');if(!['cost','portion','higher'].includes(o.pricingMode??'cost'))throw Error('Nieprawidłowy sposób sugerowania ceny.');finite(o.portionPrice??0,'Cena za porcję',0,10000);finite(o.priceMultiplier??1,'Mnożnik wyceny',0.1,10);if(o.portionsOverride!==undefined&&o.portionsOverride!==null){finite(o.portionsOverride,'Ręczna liczba porcji na tort',1,10000);if(!Number.isInteger(o.portionsOverride))throw Error('Liczba porcji na tort musi być całkowita.');}return o;}
+export function calculate(ingredients,recipes,order){ingredients.forEach(validateIngredient);recipes.forEach(r=>validateRecipe(r,ingredients));validateOrder(order,recipes);const rows=[],used=new Map(),allergens=new Set();let volume=0;const tiers=order.tiers.map((t,index)=>{const recipe=recipes.find(r=>r.id===t.recipeId);volume+=geometry(t).volume;for(const x of recipe.rows){const i=ingredients.find(i=>i.id===x.ingredientId),unit=UNITS[i.unit].base,factor=t.scaleOverride??scale('volume',recipe.base,t),reserve=unit==='szt'?1:1+order.reserve/100,rawNet=convert(x.qty,x.unit,unit)*factor*reserve*order.count,net=unit==='szt'?Math.ceil(rawNet-1e-12):rawNet,rawGross=net/(1-i.loss/100),gross=unit==='szt'?Math.ceil(rawGross-1e-12):rawGross,packBase=i.pack*UNITS[i.unit].factor,cost=gross/packBase*i.price;rows.push({...x,tier:index+1,name:i.name,unit,factor,net,gross,cost});let sum=used.get(i.id);if(!sum){sum={id:i.id,name:i.name,unit,net:0,gross:0,cost:0,packBase,packPrice:i.price,stock:i.stock*UNITS[i.unit].factor};used.set(i.id,sum);}sum.net+=net;sum.gross+=gross;sum.cost+=cost;if(i.allergens.trim())allergens.add(i.allergens.trim());}return {recipe:recipe.name,volumeFactor:t.scaleOverride??scale('volume',recipe.base,t),automaticVolumeFactor:scale('volume',recipe.base,t),portionEstimate:Math.max(1,Math.floor(geometry(t).volume/order.portionVolume))};});const shopping=[...used.values()].map(x=>{const missing=Math.max(0,x.gross-x.stock),packs=missing?Math.ceil(missing/x.packBase-1e-12):0;return {...x,missing,packs,buyCost:packs*x.packPrice,leftover:x.stock+packs*x.packBase-x.gross};});const ingredientsCost=rows.reduce((s,r)=>s+r.cost,0),n=order.count,costs={ingredients:ingredientsCost,labor:order.hours*order.rate*n,packaging:order.packaging*n,decoration:order.decoration*n,energy:order.energyKwh*order.energyPrice*n,overhead:order.overhead*n,delivery:order.delivery};const total=Object.values(costs).reduce((s,v)=>s+v,0),portions=(order.portionsOverride??tiers.reduce((s,t)=>s+t.portionEstimate,0))*n,costBased=total/(1-order.margin/100),portionBased=(order.portionPrice??0)*portions,pricingMode=order.pricingMode??'cost',basePrice=pricingMode==='portion'?portionBased:pricingMode==='higher'?Math.max(costBased,portionBased):costBased,priceMultiplier=order.priceMultiplier??1,suggested=Math.ceil(basePrice*priceMultiplier/order.roundTo-1e-12)*order.roundTo,sale=order.sale??suggested,profit=sale-total,actualMargin=sale?profit/sale*100:null;return {rows,shopping,tiers,costs,total,suggested,sale,profit,actualMargin,portions,perPortion:sale/portions,perCake:sale/n,costBased,portionBased,basePrice,priceMultiplier,pricingMode,volume:volume*n,allergens:[...allergens],shoppingCost:shopping.reduce((s,x)=>s+x.buyCost,0)};}
 export function validateClient(c){const text=(key,max,required=false)=>{if(typeof c[key]!=='string'||c[key].length>max||(required&&!c[key].trim()))throw Error('Klient: nieprawidłowe pole '+key+'.');};if(!c||typeof c!=='object')throw Error('Nieprawidłowy klient.');text('id',200,true);text('name',160,true);text('phone',300);text('email',300);text('address',1000);text('preferences',12000);text('notes',12000);for(const key of ['createdAt','updatedAt'])if(typeof c[key]!=='string'||!Number.isFinite(Date.parse(c[key])))throw Error('Klient: nieprawidłowa data zapisu.');return c;}
 export function validateClients(clients){if(!Array.isArray(clients)||clients.length>5000)throw Error('Baza może zawierać do 5000 klientów.');const ids=new Set();for(const c of clients){validateClient(c);if(ids.has(c.id))throw Error('Powtórzony identyfikator klienta.');ids.add(c.id);}return clients;}
 export function validateState(s){if(!s||s.version!==1)throw Error('Nieobsługiwana wersja kopii.');if(!Array.isArray(s.ingredients)||s.ingredients.length>1000||!Array.isArray(s.recipes)||s.recipes.length>300||!Array.isArray(s.quotes)||s.quotes.length>500)throw Error('Nieprawidłowa lub zbyt duża baza.');for(const list of [s.ingredients,s.recipes,s.quotes])if(new Set(list.map(x=>x.id)).size!==list.length)throw Error('Powtórzone identyfikatory.');if(s.cookingProgress!==undefined){const p=s.cookingProgress;if(!p||typeof p.signature!=='string'||p.signature.length>2000000||!Array.isArray(p.done)||p.done.length>2100||p.done.some(x=>typeof x!=='boolean')||!Number.isInteger(p.current)||p.current<0||p.current>=p.done.length)throw Error('Nieprawidłowy zapis postępu przygotowania.');}const clients=s.clients??[];validateClients(clients);validateSales(s.sales??[]);for(const sale of s.sales??[])if(sale.clientId!==undefined&&sale.clientId!==null&&!clients.some(c=>c.id===sale.clientId))throw Error('Zamówienie odwołuje się do nieistniejącego klienta.');s.ingredients.forEach(validateIngredient);s.recipes.forEach(r=>validateRecipe(r,s.ingredients));validateOrder(s.order,s.recipes);for(const q of s.quotes){if(typeof q.id!=='string'||typeof q.name!=='string'||typeof q.date!=='string'||!q.snapshot)throw Error('Nieprawidłowa zapisana wycena.');if(q.snapshot.quotes?.length||q.snapshot.sales?.length)throw Error('Kopia wyceny nie może zawierać kolejnych wycen.');validateState({...q.snapshot,quotes:[],sales:[],clients:[]});}return s;}

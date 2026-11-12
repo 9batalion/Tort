@@ -20,4 +20,11 @@ test('Sales editor contains descriptions, photos, payments and quotation control
 test('Sales order from calculator has independent quotation, detail and list render safely',async()=>{const a=await app();const sale=a.salesUI.fresh();sale.title='<script>bad</script>';sale.customer='Anna';sale.price=350;sale.deposit=100;sale.status='confirmed';const next=structuredClone(a.getState());next.sales.push(sale);await a.commitState(next);a.setView('sales');const html=a.els.get('#app').innerHTML;assert.ok(html.includes('&lt;script&gt;'));assert.ok(!html.includes('<script>bad'));a.salesUI.detail(sale);assert.ok(a.els.get('#sales-editor').innerHTML.includes('250'));a.salesUI.open(null,true);assert.ok(a.els.get('#sales-editor').innerHTML.includes('Tort urodzinowy'));});
 test('Storage failure blocks overwrite and surfaces recovery information',async()=>{const a=await app({fail:true});assert.ok(a.getError().includes('Nie udało się wczytać'));await assert.rejects(()=>a.commitState(initialState()),/Zapis wstrzymany/);assert.equal(a.saved(),undefined);});
 
-test('Cooking dialog shows scaled ingredients and recipe editor exposes steps',async()=>{const a=await app();await a.cookingUI.open(a.getState());const html=a.els.get('#cooking-dialog').innerHTML;assert.ok(html.includes('Zrób krok po kroku'));assert.ok(html.includes('8,64 szt'));assert.ok(html.includes('Odhacz wykonany'));a.showRecipe('raspberry-cake');const editor=a.els.get('#editor').innerHTML;assert.ok(editor.includes('recipe-step'));assert.ok(editor.includes('Przygotowanie krok po kroku'));});
+test('Cooking dialog shows scaled ingredients and recipe editor exposes steps',async()=>{const a=await app();await a.cookingUI.open(a.getState());const html=a.els.get('#cooking-dialog').innerHTML;assert.ok(html.includes('Zrób krok po kroku'));assert.ok(html.includes('9 szt'));assert.ok(html.includes('Odhacz wykonany'));a.showRecipe('raspberry-cake');const editor=a.els.get('#editor').innerHTML;assert.ok(editor.includes('recipe-step'));assert.ok(editor.includes('Przygotowanie krok po kroku'));});
+
+test('Calculator exposes adjustable portion pricing, multiplier, labor and manual scaling',async()=>{
+  const a=await app();a.setView('calculator');const html=a.els.get('#app').innerHTML;
+  for(const field of ['pricingMode','portionPrice','priceMultiplier','portionsOverride','scaleOverride','hours','rate'])assert.ok(html.includes(`data-key="${field}"`),field);
+  assert.ok(html.includes('Cena sugerowana na 1 tort'));
+  assert.ok(html.includes('Wyższa: kosztowa lub za porcję'));
+});
